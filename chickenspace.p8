@@ -6,7 +6,6 @@ __lua__
 hp = 10
 maiz = 0
 shake = 0
-
 p1 = {}
 p1.x = 0
 p1.y = 64
@@ -19,6 +18,8 @@ p1.cursp = 1
 p1.draw = function()
 	spr(p1.cursp,p1.x, p1.y)	
 end
+
+
 
 
 bullets = {}
@@ -53,7 +54,11 @@ function update_bullets()
 	 	 	shake = 5
 	 	 	maiz += 1
 	 	 	sfx(1)
-	 	 	del(enemies, e)
+	 	 	e.hp-=1
+	 	 	if e.hp <= 0 then
+		 	 	del(enemies, e)
+	 	 	end
+	 	 	
 	 	 	del(bullets, b)		 	 	 	 
 	 	end
 		end
@@ -95,13 +100,15 @@ end
 
 
 enemies = {}
-function create_enemy(x,y,spd)
+function create_enemy(x,y,spd,hp,bsp)
 	e = {}
 	e.x = x
 	e.y = y
 	e.w = 8
 	e.h = 8
+	e.hp = hp
 	e.spd = spd
+	e.bsp = bsp
 	add(enemies, e)	
 end
 
@@ -117,26 +124,29 @@ end
 
 function draw_enemies()
  for e in all(enemies) do 
-  spr(e1f,e.x,e.y)
+  spr(e.bsp+e1f,e.x,e.y)
 	end
 end
 
 towers={} 
-function create_tower(y,sp,fr)
-	local t={}
-	t.x = 12
-	t.y = flr(y/8) * 8
-	t.sp = sp
-	t.c = 0
-	t.fr = fr
-	t.update=function()
-	 t.c+=1
-	 if t.c > t.fr then
-	  t.c=0
-	  create_bullet(t.x,t.y,0,0)
-	 end
-	end
-	add(towers,t)
+function create_tower(y,sp,fr, price)
+ if maiz>=price then
+ 	maiz-=price
+ 	local t={}	
+ 	t.x = 12
+ 	t.y = flr(y/8) * 8
+ 	t.sp = sp
+ 	t.c = 0
+ 	t.fr = fr
+ 	t.update=function()
+ 	 t.c+=1
+ 	 if t.c > t.fr then
+ 	  t.c=0
+ 	  create_bullet(t.x,t.y,0,0)
+ 	 end
+ 	end
+ 	add(towers,t)
+		end
 end
 
 function update_tower()
@@ -152,23 +162,37 @@ function draw_tower()
 end
 
 
-current_hord = 1
+cur_hord = 1
 c_hord = 0
 ct_hord = 0
-
-
-function gen_lvl(hord_size, ttg)
+ttg = 50
+hsize  = 20 
+function gen_lvl()
  ct_hord+=1
  if ct_hord > ttg then
   ct_hord = 0
   c_hord+=1 
-  	if c_hord > hord_size then
-    	current_hord += 1
-	else
-   		create_enemy(128,rnd(60)+40, 0.5)
+ 	if c_hord > hsize then
+    	cur_hord += 1
+    	c_hord = 0
+    	hsize += 5
+    	if hsize >= 100 then hsize=100 end
+    	ttg -= 2
+    	if ttg <= 10 then ttg=10 end
+ 	else	
+		if cur_hord<=5 then 
+  			create_enemy(128,rnd(60)+40, 0.5, 1, 9)
+  			if rnd(100) < 5*cur_hord then create_enemy(128,rnd(60)+40, 1, 3, 7) end
+		end
+  		if cur_hord>5 and cur_hord<10 then 
+  			create_enemy(128,rnd(60)+40, 0.5, 1, 9)
+  			create_enemy(128,rnd(60)+40, 1, 2, 9)
+  			if rnd(100) < 50 then create_enemy(128,rnd(60)+40, 1.2, 10, 11) end
+  		end  	
  	end
  end   
 end
+
 
 function create_egg_explosion(x, y)
 	create_egg_y(x,y,rnd(8)+5,7,0.25)
@@ -182,6 +206,9 @@ function draw_hud()
 	
  spr(7, 48, 0)
 	print(maiz,60,2,7)
+	
+	print("wave",90,2,7)
+	print(cur_hord,110,2,7)
 end
 
 
@@ -214,14 +241,14 @@ car.update = function ()
 	end
 end
 
-
+draw_grid = false
 
 function _init()
 end
 
 function _update60()
  
- gen_lvl(50,50)
+ gen_lvl()
 
  if shake > 0 then
   shake -= 1
@@ -236,25 +263,34 @@ function _update60()
 	if btn(2) then p1.y-=p1.speed end
 	if btn(3) then p1.y+=p1.speed end
 	
-	if btn(4) then
-	 
-	 if not p1.wait then
-	  p1.wait = true
+	if btnp(4) then
 	  sfx(0)
 	  create_bullet(p1.x,p1.y,6,0)
-	 else
-	 	p1.cdwn+=1
-	 	if p1.cdwn > 5 then
-	 	 p1.cdwn = 0
-	 		p1.wait = false
-	 	end 
-	 end	 
 	end
+
+	--if btn(4) then	 
+	 --if not p1.wait then
+	  --p1.wait = true
+	  --sfx(0)
+	  --create_bullet(p1.x,p1.y,6,0)
+	 --else
+	 	--p1.cdwn+=1
+	 	--if p1.cdwn > 5 then
+	 	 --p1.cdwn = 0
+	 	 --p1.wait = false
+	 	--end 
+	 --end	 
+	--end
 	
-	if btn(5) and p1.x<20 and maiz>=10 then
-	 maiz-=10
-		create_tower(p1.y,16,100)
-	end
+	if p1.x < 20 then
+		draw_grid = true
+ 	if btnp(5) then	 
+ 		create_tower(p1.y,16,100,20)
+ 	end
+	else
+		draw_grid = false
+	end	
+	
 	
 	if collide(car, p1) then
 			sfx(2)
@@ -293,7 +329,7 @@ function _update60()
  if c_spdanim2>4 then 
   c_spdanim2 = 0 
   e1f+=1
-  if e1f>11 then e1f = 10 end  
+  if e1f>2 then e1f = 1 end  
  end
 
 	car.update()
@@ -306,20 +342,24 @@ end
 
 c_spdanim = 0
 c_spdanim2 = 0
-e1f = 10
+e1f = 1
 
 function _draw()	
  cls(5)
 	rectfill(-8,-8,8,136, 11)
 	map(0,0,0,0,16,16)
 	draw_tower()
- p1.draw()
+	
+	if draw_grid then
+	rect(12,(flr(p1.y/8) * 8),
+	     12+8,(flr(p1.y/8) * 8)+8,7)
+	end
+ p1.draw() 
 	draw_bullets()
 	draw_eggs_y()
 	draw_enemies()
 	car.draw()
 	draw_hud()
-
 end
 
 
@@ -334,14 +374,14 @@ function collide(a,b)
  return res
 end
 __gfx__
-00000000000000000088800000099990000000000000022200000000000000000444440004444400777077707770777000000000000000000000000000000000
-00000000008880000aaaa8000999999900000000200022220ffff000000000004444444044444440777777707777777000000000000000000000000000000000
-007007000aaa8800aaaaaa00fff990990880880022222202ffff7f0000099000444ff444444ff444077777000777770000000000000000000000000000000000
-00077000aaaaaaa0aaaaa199000999998888788000002222fffff7f000997900ff0ff444ff0ff444077777000777770000000000000000000000000000000000
-00077000aaaaa199aaaaaa89000999998888888000002222fffffff000999900fffff444fffff444ff0fff00ff0fff0000000000000000000000000000000000
-00700700aaaaaa89aaaaaa80fff990990888880022222202ffffff00009999000fffff408fffff480fffff008fffff0000000000000000000000000000000000
-00000000aaaaaa80aaaaaa800999999900888000200022220ffff000009999008ddddd80dddddddd8ccc77807ccc777800000000000000000000000000000000
-000000000aaaaa000aaaaa0000099990000800000000022200000000000990000d000d0000000000070007000000000000000000000000000000000000000000
+000000000000000000888000000999900000000000000222000000000000000004444400044444007770777077707770ccc0ccc0ccc0ccc00000000000000000
+00000000008880000aaaa8000999999900000000200022220ffff0000000000044444440444444407777777077777770ccccccc0ccccccc00000000000000000
+007007000aaa8800aaaaaa00fff990990880880022222202ffff7f0000099000444ff444444ff44407777700077777000ccccc000ccccc000000000000000000
+00077000aaaaaaa0aaaaa199000999998888788000002222fffff7f000997900ff0ff444ff0ff44407777700077777000ccccc000ccccc000000000000000000
+00077000aaaaa199aaaaaa89000999998888888000002222fffffff000999900fffff444fffff444ff0fff00ff0fff0088088800880888000000000000000000
+00700700aaaaaa89aaaaaa80fff990990888880022222202ffffff00009999000fffff408fffff480fffff008fffff0008888800288888000000000000000000
+00000000aaaaaa80aaaaaa800999999900888000200022220ffff000009999008ddddd80dddddddd8ccc77807ccc77782ccc77207ccc77720000000000000000
+000000000aaaaa000aaaaa0000099990000800000000022200000000000990000d000d0000000000070007000000000007000700000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
