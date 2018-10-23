@@ -50,7 +50,8 @@ function update_bullets()
 		end
 		
 		if collide(b,car) then
-			 	create_egg_explosion(b.x, b.y)
+		 	create_egg_explosion(b.x, b.y)
+		 	create_big_explosion(b.x, b.y, 7);
 	 	 	shake = 5
 	 	 	sfx(1)
 	 	 	del(bullets, b)	
@@ -81,6 +82,42 @@ function draw_bullets()
 	end
 end
 
+bs={}
+function create_b(x, y, s, col)
+ c = {}
+ c.s = s
+ c.x = x
+ c.y = y
+ c.c = col
+ c.a = rnd(30)*20
+ --c.a = rnd(1000)/1000 
+ add(bs, c) 
+end
+
+function draw_big_explosion()
+  for c in all(bs) do 
+ 	circfill(c.x, c.y, c.s, c.c) 
+  end
+end
+
+function create_big_explosion(x,y,c)
+ create_b(x,y,rnd(10)+5, c)
+ create_b(x,y,rnd(10)+5, c)
+ create_b(x,y,rnd(10)+5, c)
+ create_b(x,y,rnd(10)+5, c)
+end
+
+
+function update_big_explosion()
+	for c in all(bs) do 
+ 		c.x += (2 * cos1(c.a))
+ 		c.y += (2 * sin1(c.a))	
+ 		c.s -= 0.2
+ 		if c.s <= 0 then
+ 		 del(bs,c)
+ 		end 
+	 end
+end
 
 eggs_y = {}
 function create_egg_y(x,y,sz,col,spd)
@@ -259,11 +296,14 @@ function gen_lvl()
  end   
 end
 
+cos1 = cos function cos(angle) return cos1(angle/(3.1415*2)) end
+sin1 = sin function sin(angle) return sin1(-angle/(3.1415*2)) end
 
 function create_egg_explosion(x, y)
 	create_egg_y(x,y,rnd(8)+5,7,0.25)
 	create_egg_y(x+rnd(2),y+rnd(2),rnd(5)+3,10,0.2)
 end
+
 
 function draw_hud()
 	rectfill(-5,-5,133,9,0)
@@ -405,6 +445,8 @@ function _update60()
  	update_enemies()
  	update_tower()
  	update_texts()
+	update_big_explosion()
+
 	end
 	
  if state==2 then
@@ -434,13 +476,15 @@ function _draw()
  	if draw_grid then
  	spr(13+e1f,12,(flr(p1.y/8) * 8))
  	end
-  p1.draw() 
+  
+  	p1.draw() 
  	draw_bullets()
  	draw_eggs_y()
  	draw_enemies()
  	car.draw()
  	draw_hud()
  	draw_texts()
+ 	draw_big_explosion()
 	end
 
  if state==2 then
