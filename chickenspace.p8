@@ -13,150 +13,209 @@ p1.y = 64
 p1.h = 8
 p1.w = 8
 p1.speed = 0.8
+p1.speed_base = 0.8
+p1.speed_pp = 1.05
 p1.cdwn = 0
 p1.wait = false
 p1.cursp = 1
 p1.hp = 10
+
 p1.draw = function()
-	spr(p1.cursp,p1.x, p1.y)	
+ spr(p1.cursp,p1.x, p1.y) 
 end
+
 p1.damage = function(v)
-	p1.hp-=v
-	if p1.hp< 1 then
-	 p1.hp = 0
-	 state = 2
-	end
+ p1.hp-=v
+ if p1.hp< 1 then
+  p1.hp = 0
+  state = 2
+ end
 end
-
-
 
 bullets = {}
 function create_bullet(x,y,ox,oy)
-	b = {}
-	b.x = x + ox
-	b.y = y
-	b.h = 8
-	b.w = 8
-	add(bullets, b)
+ b = {}
+ b.x = x + ox
+ b.y = y
+ b.h = 8
+ b.w = 8
+ add(bullets, b)
 end
 
 
 function update_bullets()
-	for b in all(bullets) do 
-		b.x += 3
-		if b.x > 120 then
-			create_egg_explosion(b.x, b.y)
-			del(bullets, b)
-		end
-		
-		if collide(b,car) then
-		 	create_egg_explosion(b.x, b.y)
-		 	create_big_explosion(b.x, b.y, 7);
-	 	 	shake = 5
-	 	 	sfx(1)
-	 	 	del(bullets, b)	
-		end
-		
-		for e in all(enemies) do 
-	 	if collide(b,e) then
-	 	 	create_egg_explosion(b.x, b.y)
-	 	 	shake = 5
-	 	 	maiz += 1
-	 	 	sfx(1)
-	 	 	create_text("+1",e.x-4,e.y-4,10,7)
-	 	 	e.hp-=1
-	 	 	if e.hp <= 0 then
-		 	  
-		 	 	del(enemies, e)
-	 	 	end
-	 	 	
-	 	 	del(bullets, b)		 	 	 	 
-	 	end
-		end
-	end
+ for b in all(bullets) do 
+  b.x += 3
+  if b.x > 120 then
+   create_egg_explosion(b.x, b.y)
+   del(bullets, b)
+  end
+  
+  if collide(b,car) then
+    create_egg_explosion(b.x, b.y)
+    --create_big_explosion(b.x, b.y, 7);
+     shake = 5
+     sfx(1)
+     del(bullets, b) 
+  end
+  
+  for c in all(corpses) do 
+   if collide(c,b) and not c.push then
+    create_egg_explosion(b.x, b.y)
+    c.f = 2
+    c.push = true
+    c.explode = rnd(100)<30
+   end
+  end
+
+  for e in all(enemies) do 
+   if collide(b,e) then
+     create_egg_explosion(b.x, b.y)
+     shake = 5
+     maiz += 1
+     sfx(1)
+     create_text("+1",e.x-4,e.y-4,10,7)
+     e.hp-=1
+     if e.hp <= 0 then
+      create_corpse(e.x,e.y,e.diesp,2)
+      if e.lvl == 1 and rnd(100)<5 then create_powerup(e.x, e.y, 41, 1) end
+      if e.lvl == 2 and rnd(100)<40 then create_powerup(e.x, e.y, 4, 0) end
+      del(enemies, e)
+     end
+     
+     del(bullets, b)         
+   end
+  end
+ end
 end
 
 function draw_bullets()
-	for b in all(bullets) do 
-	 spr(6,b.x, b.y)
-	end
+ for b in all(bullets) do 
+  spr(6,b.x, b.y)
+ end
 end
 
 bs={}
-function create_b(x, y, s, col)
+function create_circle_p(x, y, s, col, vx, vy, vs)
  c = {}
  c.s = s
  c.x = x
  c.y = y
  c.c = col
- c.a = rnd(30)*20
- --c.a = rnd(1000)/1000 
+ c.vx = vx
+ c.vy = vy
+ c.vs = vs
  add(bs, c) 
 end
 
-function draw_big_explosion()
+function draw_circle_p()
   for c in all(bs) do 
- 	circfill(c.x, c.y, c.s, c.c) 
+   circfill(c.x, c.y, c.s, c.c) 
   end
 end
 
 function create_big_explosion(x,y,c)
- create_b(x,y,rnd(10)+5, c)
- create_b(x,y,rnd(10)+5, c)
- create_b(x,y,rnd(10)+5, c)
- create_b(x,y,rnd(10)+5, c)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
 end
 
-
-function update_big_explosion()
-	for c in all(bs) do 
- 		c.x += (2 * cos1(c.a))
- 		c.y += (2 * sin1(c.a))	
- 		c.s -= 0.2
- 		if c.s <= 0 then
- 		 del(bs,c)
- 		end 
-	 end
+function create_big_explosion2(x,y,c)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
+ create_circle_p(x,y,rnd(10)+5, c, (2 * cos1(rnd(30)*20)), (2 * sin1(rnd(30)*20)), 0.2)
 end
 
-eggs_y = {}
-function create_egg_y(x,y,sz,col,spd)
- e = {}
- e.x = x
- e.y = y+4
- e.sz = sz
- e.col = col
- e.spd = spd
- add(eggs_y, e)
+bigc={}
+function create_big_circle(x,y)
+ c={}
+ c.x = x
+ c.y = y
+ c.st = 0
+ c.col = 0
+ add(bigc, c)
 end
 
-function update_eggs_y()
-	for e in all(eggs_y) do 
-	 e.sz-= e.spd
-	 if e.sz <= 1 then
-	  del(eggs_y,e)
-	 end
-	end
+function update_big_circle()
+ for c in all(bigc) do 
+  c.st += 1
+  if c.st > 2 then
+    c.col = 7
+  end
+  if c.st > 4 then
+    del(bigc, c)
+  end  
+  end
 end
 
-function draw_eggs_y()
- for e in all(eggs_y) do 
-	 circfill(e.x, e.y, e.sz, e.col)
-	end
+function draw_big_circle()
+for c in all(bigc) do 
+ circfill(c.x,c.y,20,c.col)
+ end
+end
+
+function update_circle_p()
+ for c in all(bs) do 
+   c.x += c.vx
+   c.y += c.vy
+   c.s -= c.vs
+   if c.s <= 0 then
+    del(bs,c)
+   end 
+  end
+end
+
+corpses = {}
+function create_corpse(x,y,sp,force)
+ c = {}
+ c.x = x
+ c.y = y
+ c.w = 8
+ c.h = 8
+ c.sp = sp
+ c.f = force
+ c.push = false
+ c.explode = false
+ add(corpses,c)
+end
+
+function update_corpses()
+ for c in all(corpses) do 
+   c.f-=0.2
+   if c.f <= 0 then c.f = 0 end
+   c.x+=c.f
+   if c.push and c.f == 0 then 
+    if c.explode then 
+     create_big_circle(c.x, c.y) 
+     create_big_explosion2(c.x,c.y,8)
+    end 
+    del(corpses,c)
+   end
+ end
+end
+
+function draw_corpses()
+ for c in all(corpses) do 
+  spr(c.sp, c.x, c.y)
+ end
 end
 
 
 enemies = {}
-function create_enemy(x,y,spd,hp,bsp)
-	e = {}
-	e.x = x
-	e.y = y
-	e.w = 8
-	e.h = 8
-	e.hp = hp
-	e.spd = spd
-	e.bsp = bsp
-	add(enemies, e)	
+function create_enemy(x,y,spd,hp,bsp,lvl,diesp)
+ e = {}
+ e.x = x
+ e.y = y
+ e.w = 8
+ e.h = 8
+ e.hp = hp
+ e.spd = spd
+ e.bsp = bsp
+ e.lvl = lvl
+ e.diesp = diesp
+ add(enemies, e) 
 end
 
 function update_enemies()
@@ -164,67 +223,113 @@ function update_enemies()
   e.x -= e.spd
   if e.x < 24 then
    p1.damage(1)
-  	del(enemies, e)
+   del(enemies, e)
   end
-	end
+ end
 end
 
 function draw_enemies()
  for e in all(enemies) do 
   spr(e.bsp+e1f,e.x,e.y)
-	end
+ end
 end
+
+powerups = {}
+function create_powerup(x,y,sp,tp)
+ p = {}
+ p.x = x
+ p.y = y
+ p.h = 8
+ p.w = 8
+ p.iy = y
+ p.sp = sp
+ p.a = 0
+ p.t = tp
+ add(powerups, p)
+end
+
+function update_powerup()
+ for p in all(powerups) do
+  p.y= p.iy+sin(p.a*50)
+  p.a+=1
+  if p.a >= 1000 then p.a = 0 end
+
+  if collide(p,p1) then 
+     shake = 5    
+     if  p.t == 0 then  --heart
+      p1.hp+=1     
+     end
+     if  p.t == 1 then  --speed
+      p1.speed=p1.speed_pp     
+      spd_p = true
+     end     
+
+     del(powerups, p) 
+  end
+ end
+end
+
+function draw_powerup()
+ for p in all(powerups) do 
+  spr(p.sp,p.x,p.y)
+ end
+end
+
+d_spd_p = 500
+c_spd_p = 0
+spd_p = false
+
 
 list_price = {20,40,60,80,100,120,140,150,160,170,180,190,200,210,220,230}
 list_towers = {}
 towers={} 
 v = 0
 function create_tower(y,fr, price)
-	v = flr(y/8)
-	
-	if list_towers[v] == nil then
-		if maiz>=list_price[1] then
-		 	maiz-=price
-		 	local t={}	
-		 	t.x = 12
-		 	t.y = flr(y/8) * 8
-		 	t.sp = 16
-		 	t.c = 0
-		 	t.fr = fr
-		 	t.lvl = 0
-		 	t.update=function()
-		 	 t.c+=1
-		 	 if t.c > t.fr then
-		 	  t.c=0
-		 	  create_bullet(t.x,t.y,0,0)
-		 	 end
-		 	end
-		 	add(towers,t)
-		 	
-		 	create_text("-20",t.x,t.y,10,7)
-		 	
-		 	list_towers[v] = t;	 	
-		end
-	else	
-		if maiz>=list_price[list_towers[v].lvl+1] then
-			maiz-=list_price[v]
-			list_towers[v].lvl+=1
-				create_text("up",list_towers[v].x,list_towers[v].y,10,7) 
-		end
-	end
-	
+ v = flr(y/8)
+ 
+ if list_towers[v] == nil then
+  if maiz>=list_price[1] then
+    maiz-=price
+    local t={} 
+    t.x = 12
+    t.y = flr(y/8) * 8
+    t.sp = 16
+    t.c = 0
+    t.fr = fr
+    t.lvl = 0
+    t.update=function()
+     t.c+=1
+     if t.c > t.fr then
+      t.c=0
+      create_bullet(t.x,t.y,0,0)      
+     end
+    end
+    add(towers,t)
+    
+    create_text("-20",t.x,t.y,10,7)
+    
+    list_towers[v] = t;   
+  end
+ else 
+  if maiz>=list_price[list_towers[v].lvl+1] then
+   maiz-=list_price[list_towers[v].lvl+1]
+   list_towers[v].lvl+=1
+    create_text("up",list_towers[v].x,list_towers[v].y,10,7) 
+  end
+ end
+ 
 end
 
 function update_tower()
  for tw in all(towers) do 
-	 tw.update()
-	end
+  tw.update()
+ end
 end
 
 function draw_tower()
  for t in all(towers) do 
   spr(t.sp+t.lvl,t.x,t.y)
-	end
+ end
 end
 
 texts = {}
@@ -242,26 +347,26 @@ end
 
 function update_texts()
  for t in all(texts) do 
-		t.y -= 0.8
-		t.c+=1
+  t.y -= 0.8
+  t.c+=1
 
-		if t.c%8 == 0 then
-		 if t.rc == t.c1 then 
-		 	t.rc = t.c2
-		 else
-		  t.rc = t.c1
-		 end
-		end
-		if t.c>16 then
-		 del(texts, t)
-		end
-	end
+  if t.c%8 == 0 then
+   if t.rc == t.c1 then 
+    t.rc = t.c2
+   else
+    t.rc = t.c1
+   end
+  end
+  if t.c>16 then
+   del(texts, t)
+  end
+ end
 end
 
 function draw_texts()
  for t in all(texts) do 
-		print(tx.t, tx.x, tx.y, tx.rc)
-	end
+  print(tx.t, tx.x, tx.y, tx.rc)
+ end
 end
 
 
@@ -275,24 +380,24 @@ function gen_lvl()
  if ct_hord > ttg then
   ct_hord = 0
   c_hord+=1 
- 	if c_hord > hsize then
-    	cur_hord += 1
-    	c_hord = 0
-    	hsize += 5
-    	if hsize >= 100 then hsize=100 end
-    	ttg -= 2
-    	if ttg <= 10 then ttg=10 end
- 	else	
-		if cur_hord<=5 then 
-  			create_enemy(128,rnd(60)+40, 0.5, 1, 9)
-  			if rnd(100) < 5*cur_hord then create_enemy(128,rnd(60)+40, 1, 3, 7) end
-		end
-  		if cur_hord>5 and cur_hord<10 then 
-  			create_enemy(128,rnd(60)+40, 0.5, 1, 9)
-  			create_enemy(128,rnd(60)+40, 1, 2, 9)
-  			if rnd(100) < 50 then create_enemy(128,rnd(60)+40, 1.2, 10, 11) end
-  		end  	
- 	end
+  if c_hord > hsize then
+     cur_hord += 1
+     c_hord = 0
+     hsize += 5
+     if hsize >= 100 then hsize=100 end
+     ttg -= 2
+     if ttg <= 10 then ttg=10 end
+  else 
+  if cur_hord<=5 then 
+     create_enemy(128,rnd(60)+40, 0.5, 1, 9, 1, 42)
+     if rnd(100) < 5*cur_hord then create_enemy(128,rnd(60)+40, 0.8, 3, 7, 2, 43) end
+  end
+    if cur_hord>5 and cur_hord<10 then 
+     create_enemy(128,rnd(60)+40, 0.5, 1, 9, 1,42)
+     create_enemy(128,rnd(60)+40, 0.8, 3, 7, 2,43)
+     if rnd(100) < 50 then create_enemy(128,rnd(60)+40, 1, 10, 11, 3,42) end
+    end   
+  end
  end   
 end
 
@@ -300,21 +405,21 @@ cos1 = cos function cos(angle) return cos1(angle/(3.1415*2)) end
 sin1 = sin function sin(angle) return sin1(-angle/(3.1415*2)) end
 
 function create_egg_explosion(x, y)
-	create_egg_y(x,y,rnd(8)+5,7,0.25)
-	create_egg_y(x+rnd(2),y+rnd(2),rnd(5)+3,10,0.2)
+ create_circle_p(x,y+4,rnd(8)+5,7,0,0,0.25)
+ create_circle_p(x+rnd(2),y+rnd(2)+4,rnd(5)+3,10,0,0,0.2)
 end
 
 
 function draw_hud()
-	rectfill(-5,-5,133,9,0)
+ rectfill(-5,-5,133,9,0)
  spr(4, 1, 0)
-	print(p1.hp,12,2,7)
-	
+ print(p1.hp,12,2,7)
+ 
  spr(7, 48, 0)
-	print(maiz,60,2,7)
-	
-	print("wave",90,2,10)
-	print(cur_hord,110,2,10)
+ print(maiz,60,2,7)
+ 
+ print("wave",90,2,10)
+ print(cur_hord,110,2,10)
 end
 
 
@@ -341,10 +446,10 @@ car.reset = function()
 end
 
 car.update = function ()
-	car.y-=1
-	if car.y < -16 then
-		car.reset()
-	end
+ car.y-=1
+ if car.y < -16 then
+  car.reset()
+ end
 end
 
 draw_grid = false
@@ -366,66 +471,67 @@ function _update60()
    camera(0,0)
   end
     
- 	if btn(0) then p1.x-=p1.speed end
- 	if btn(1) then p1.x+=p1.speed end
- 	if btn(2) then p1.y-=p1.speed end
- 	if btn(3) then p1.y+=p1.speed end
- 	 
- 	if btn(4) then	 
- 	 if not p1.wait then
- 	  p1.wait = true
- 	  sfx(0)
- 	  create_bullet(p1.x,p1.y,6,0)
- 	 else
- 	 	p1.cdwn+=1
- 	 	if p1.cdwn > 10 then
- 	 	 p1.cdwn = 0
- 	 	 p1.wait = false
- 	 	end 
- 	 end
- 	
- 	else
- 	 	 p1.cdwn = 0
- 	 	 p1.wait = false	 
- 	end
- 	
- 	if p1.x < 20 then
- 		draw_grid = true
-  	if btnp(5) then  	 	 
-  		create_tower(p1.y,100,20)
-  	end
- 	else
- 		draw_grid = false
- 	end	
- 	
- 	
- 	if collide(car, p1) then
- 			sfx(2)
- 			shake = 5
- 			if car.r then
- 				car.r = false
- 				p1.damage(2)
- 			end
- 	end
- 	
- 	for e in all(enemies) do
- 		if collide(e,p1) then
- 			sfx(2)
- 			shake = 5
- 			p1.damage(1)
- 			del(enemies,e)
- 		end
- 	end
- 	
- 	if p1.x <= 0 then
- 		p1.x = 0
- 	end
- 	
- 	if p1.x <= 0 then p1.x = 0 end	
- 	if p1.y >= 120 then p1.y = 120 end	
- 	if p1.y <= 9 then p1.y = 9 end	
+  if btn(0) then p1.x-=p1.speed end
+  if btn(1) then p1.x+=p1.speed end
+  if btn(2) then p1.y-=p1.speed end
+  if btn(3) then p1.y+=p1.speed end
+   
+  if btn(4) then  
+   if not p1.wait then
+    p1.wait = true
+    sfx(0)
+    create_bullet(p1.x,p1.y,6,0)
+     p1.x-=2
+   else
+    p1.cdwn+=1
+    if p1.cdwn > 10 then
+     p1.cdwn = 0
+     p1.wait = false
+    end 
+   end
+  
+  else
+     p1.cdwn = 0
+     p1.wait = false  
+  end
+  
+  if p1.x < 20 then
+   draw_grid = true
+   if btnp(5) then      
+    create_tower(p1.y,100,20)
+   end
+  else
+   draw_grid = false
+  end 
+  
+  
+  if collide(car, p1) then
+    sfx(2)
+    shake = 5
+    if car.r then
+     car.r = false
+     p1.damage(2)
+    end
+  end
+  
+  for e in all(enemies) do
+   if collide(e,p1) then
+    sfx(2)
+    shake = 5
+    p1.damage(1)
+    del(enemies,e)
+   end
+  end
+  
+  if p1.x <= 0 then
+   p1.x = 0
+  end
+  
+  if p1.x <= 0 then p1.x = 0 end 
+  if p1.y >= 120 then p1.y = 120 end 
+  if p1.y <= 9 then p1.y = 9 end 
  
- 	c_spdanim+=1
+  c_spdanim+=1
   if c_spdanim>8 then 
    c_spdanim = 0 
    p1.cursp+=1
@@ -439,16 +545,25 @@ function _update60()
    if e1f>2 then e1f = 1 end  
   end
  
- 	car.update()
- 	update_bullets()
- 	update_eggs_y()
- 	update_enemies()
- 	update_tower()
- 	update_texts()
-	update_big_explosion()
-
-	end
-	
+  if spd_p then
+   c_spd_p+=1
+   if c_spd_p>d_spd_p then
+    c_spd_p = 0
+    spd_p = false
+    p1.speed = p1.speed_base
+   end
+  end
+  car.update()
+  update_bullets()
+  update_enemies()
+  update_tower()
+  update_texts()
+  update_circle_p()
+  update_powerup()
+  update_corpses()
+  update_big_circle()
+ end
+ 
  if state==2 then
   if btn(4) then
    state = 1
@@ -466,35 +581,35 @@ c_spdanim = 0
 c_spdanim2 = 0
 e1f = 1
 
-function _draw()	
+function _draw() 
  if state==1 then
-	 cls(5)
- 	rectfill(-8,-8,8,136, 11)
- 	map(0,0,0,0,16,16)
- 	draw_tower()
- 	
- 	if draw_grid then
- 	spr(13+e1f,12,(flr(p1.y/8) * 8))
- 	end
+  cls(5)
+  rectfill(-8,-8,8,136, 11)
+  map(0,0,0,0,16,16)
+  draw_tower()
   
-  	p1.draw() 
- 	draw_bullets()
- 	draw_eggs_y()
- 	draw_enemies()
- 	car.draw()
- 	draw_hud()
- 	draw_texts()
- 	draw_big_explosion()
-	end
+  if draw_grid then
+  spr(13+e1f,12,(flr(p1.y/8) * 8))
+  end
+  
+  draw_corpses()
+   p1.draw() 
+  draw_bullets()
+  draw_enemies()
+  car.draw()
+  draw_hud()
+  draw_texts()
+  draw_circle_p()
+  draw_powerup()
+  draw_big_circle()
+ end
 
  if state==2 then
-		cls(0)
-		line(64,0,64,128,7)
-		print("fried",56,62,8)
-		print("chicken",51,70,8)
-	end	
-
-	print(list_towers[v], 100,120,7)
+  cls(0)
+  print("fried",56,62,8)
+  print("chicken",51,70,8)
+ end 
+ 
 end
 
 
@@ -527,12 +642,12 @@ __gfx__
 00000000000000005555000055550000555555500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 bbbbbbbbbbbbb555bbbbbbbbbbbbbbbb000660000008889900088899998880009988800000000000000000000000000000000000000000000000000000000000
 bbbbbbbbbbbbb555bbbbb8bbbb3bbbbb000660000088888800888888888888008888880000000000000000000000000000000000000000000000000000000000
-bbbbbbbbbbbbbb55bbbb8e8bbbbbbbbb000660000088888800888888888888008888880000000000000000000000000000000000000000000000000000000000
-bbbbbbbbbbbbbb55bbbbb8bbbbbbbbbb000660000d88888801888888888888d08888881000000000000000000000000000000000000000000000000000000000
-bbbbbbbbbbbbbb55bbbbbbbbbbbbbb3b000660000d888ccc01888cccccc888d0ccc8881000000000000000000000000000000000000000000000000000000000
-bbbbbbbbbbbbbb55bbbbbbbbbbbbbbbb0006600001888ccc0d888cccccc88810ccc888d000000000000000000000000000000000000000000000000000000000
-bbbbbbbbbbbbbb55bbbbbbbbbbb3bbbb0006600001888ccc0d888cccccc88810ccc888d000000000000000000000000000000000000000000000000000000000
-bbbbbbbbbbbbb355bbbbbbbbbbbbbb3b000660000088877700888777777888007778880000000000000000000000000000000000000000000000000000000000
+bbbbbbbbbbbbbb55bbbb8e8bbbbbbbbb0006600000888888008888888888880088888800000000000000f077000ff44000000000000000000000000000000000
+bbbbbbbbbbbbbb55bbbbb8bbbbbbbbbb000660000d88888801888888888888d088888810777cd0000cfff777ddfff44400000000000000000000000000000000
+bbbbbbbbbbbbbb55bbbbbbbbbbbbbb3b000660000d888ccc01888cccccc888d0ccc88810077cc0000cff07770dff044400000000000000000000000000000000
+bbbbbbbbbbbbbb55bbbbbbbbbbbbbbbb0006600001888ccc0d888cccccc88810ccc888d000ccd0007cfff7700dffff4400000000000000000000000000000000
+bbbbbbbbbbbbbb55bbbbbbbbbbb3bbbb0006600001888ccc0d888cccccc88810ccc888d000cccc0007fff7770dffff4400000000000000000000000000000000
+bbbbbbbbbbbbb355bbbbbbbbbbbbbb3b000660000088877700888777777888007778880000ccccc077fff777ddf4444400000000000000000000000000000000
 55555555bbbbb555bbbbbbbbbbbbbbbb0006600000888ccc00888cccccc88800ccc8880000000000000000000000000000000000000000000000000000000000
 55555555bbbbb555babbbbbbbbbbbbbb000660000088888800888888888888008888880000000000000000000000000000000000000000000000000000000000
 55555555bbbbbb55a9abbbbbb3bbbbb3000650000d88888801888888888888d08888881000000000000000000000000000000000000000000000000000000000
