@@ -62,9 +62,13 @@ function update_bullets()
   for c in all(corpses) do 
    if collide(c,b) and not c.push then
     create_egg_explosion(b.x, b.y)
+    shake = 5
+     sfx(1)
     c.f = 2
     c.push = true
     c.explode = rnd(100)<30
+
+    del(bullets, b)   
    end
   end
 
@@ -188,8 +192,9 @@ function update_corpses()
    c.x+=c.f
    if c.push and c.f == 0 then 
     if c.explode then 
-     create_big_circle(c.x, c.y) 
-     create_big_explosion2(c.x,c.y,8)
+
+     --create_big_circle(c.x, c.y) 
+     --create_big_explosion2(c.x,c.y,7)
     end 
     del(corpses,c)
    end
